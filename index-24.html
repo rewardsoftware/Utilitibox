@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UtilityBox — Reward Software</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg: #FAF9FF;
+    --surface: #FFFFFF;
+    --lavender: #F0ECFF;
+    --accent: #7C6FF0;
+    --accent-dark: #5E4FE0;
+    --ink: #211B36;
+    --muted: #8B84A3;
+    --line: #E9E4FA;
+    --danger: #FF6B7A;
+    --good: #3FC98A;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; overscroll-behavior:none;}
+  body{
+    background:var(--bg);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  header{
+    padding:18px 20px 14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .back-btn{
+    display:none;
+    width:36px; height:36px;
+    border-radius:50%;
+    background:var(--lavender);
+    color:var(--accent-dark);
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+    font-weight:700;
+    flex:0 0 auto;
+  }
+  .back-btn.show{display:flex;}
+  header .titles{flex:1;}
+  header .brand{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:-0.02em;
+  }
+  header .brand span{color:var(--accent);}
+  header .tag{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:500;
+    letter-spacing:0.03em;
+  }
+
+  main{
+    flex:1;
+    padding:0 16px 40px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .view{display:none; flex:1; flex-direction:column;}
+  .view.active{display:flex;}
+
+  /* ---------- Home grid ---------- */
+  .tool-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
+  }
+  .tool-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:20px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    min-height:110px;
+    justify-content:space-between;
+  }
+  .tool-card .ic{
+    width:42px; height:42px;
+    border-radius:14px;
+    background:var(--lavender);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px;
+  }
+  .tool-card .name{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    line-height:1.25;
+  }
+  .tool-card:active{transform:scale(0.97);}
+
+  /* ---------- Calculator ---------- */
+  .calc-display{
+    background:var(--ink);
+    border-radius:24px;
+    padding:34px 24px;
+    margin-bottom:18px;
+    min-height:150px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:flex-end;
+    position:relative;
+    overflow:hidden;
+  }
+  .calc-display::before{
+    content:'';
+    position:absolute;
+    top:-40%; right:-20%;
+    width:180px; height:180px;
+    background:radial-gradient(circle, rgba(124,111,240,0.35), transparent 70%);
+  }
+  .calc-expr{
+    font-family:'JetBrains Mono',monospace;
+    font-size:16px;
+    color:#8F87B5;
+    min-height:20px;
+    z-index:1;
+  }
+  .calc-result{
+    font-family:'JetBrains Mono',monospace;
+    font-size:46px;
+    font-weight:500;
+    color:#fff;
+    z-index:1;
+    word-break:break-all;
+    text-align:right;
+  }
+
+  .calc-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:12px;
+    flex:1;
+  }
+  .key{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:21px;
+    font-weight:500;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 0;
+    min-height:64px;
+    user-select:none;
+    transition:transform .06s ease, background .15s ease;
+  }
+  .key:active{transform:scale(0.94); background:var(--lavender);}
+  .key.op{color:var(--accent); font-weight:700;}
+  .key.func{background:var(--lavender); color:var(--accent-dark); font-family:'Inter',sans-serif; font-size:15px; font-weight:600;}
+  .key.equals{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .key.equals:active{background:var(--accent-dark);}
+
+  /* ---------- Generic cards (converter / currency / age / bmi) ---------- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:26px 22px;
+    margin-bottom:18px;
+  }
+  .card-label{
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted);
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .num-input{
+    flex:1;
+    font-family:'JetBrains Mono',monospace;
+    font-size:28px;
+    font-weight:500;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    width:0;
+    outline:none;
+  }
+  input, select, textarea{
+    font-family:'Inter',sans-serif;
+  }
+  select.unit{
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    color:var(--accent-dark);
+    background:var(--lavender);
+    border:none;
+    border-radius:12px;
+    padding:12px 14px;
+    outline:none;
+  }
+  .swap-btn{
+    width:44px; height:44px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:8px auto;
+    font-size:18px;
+    font-weight:700;
+    border:none;
+    cursor:pointer;
+  }
+  .cat-scroll{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:14px;
+    scrollbar-width:none;
+  }
+  .cat-scroll::-webkit-scrollbar{display:none;}
+  .cat-chip{
+    flex:0 0 auto;
+    padding:9px 16px;
+    border-radius:999px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    font-size:13px;
+    font-weight:600;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .cat-chip.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  .btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:14px;
+    padding:16px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    text-align:center;
+    width:100%;
+  }
+  .btn:active{background:var(--accent-dark);}
+  .btn-outline{
+    background:var(--lavender);
+    color:var(--accent-dark);
+  }
+
+  /* Text input styled */
+  .text-field{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--bg);
+    border-radius:14px;
+    padding:14px;
+    font-size:15px;
+    color:var(--ink);
+    outline:none;
+  }
+  textarea.text-field{
+    min-height:140px;
+    resize:vertical;
+    font-family:'Inter',sans-serif;
+  }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin-top:14px;
+  }
+  .stat-box{
+    background:var(--lavender);
+    border-radius:14px;
+    padding:14px;
+    text-align:center;
+  }
+  .stat-box .val{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:20px;
+    color:var(--accent-dark);
+  }
+  .stat-box .lab{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+    margin-top:2px;
+  }
+
+  /* Password generator */
+  .pass-display{
+    background:var(--ink);
+    color:#fff;
+    font-family:'JetBrains Mono',monospace;
+    font-size:19px;
+    padding:20px;
+    border-radius:16px;
+    word-break:break-all;
+    margin-bottom:16px;
+    min-height:30px;
+  }
+  .opt-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    font-weight:500;
+  }
+  .opt-row:last-child{border-bottom:none;}
+  input[type="range"]{
+    width:100%;
+    accent-color:var(--accent);
+  }
+  .switch{
+    position:relative;
+    width:44px; height:26px;
+    background:var(--line);
+    border-radius:999px;
+    flex:0 0 auto;
+  }
+  .switch input{opacity:0; width:100%; height:100%; position:absolute; margin:0; cursor:pointer;}
+  .switch .dot{
+    position:absolute; top:3px; left:3px;
+    width:20px; height:20px;
+    background:#fff;
+    border-radius:50%;
+    transition:transform .15s ease;
+    box-shadow:0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked ~ .dot{transform:translateX(18px);}
+  .switch:has(input:checked){background:var(--accent);}
+
+  /* BMI gauge */
+  .bmi-result{
+    text-align:center;
+    padding:10px 0 4px;
+  }
+  .bmi-num{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:44px;
+    color:var(--accent-dark);
+  }
+  .bmi-cat{
+    font-weight:600;
+    font-size:14px;
+    padding:6px 14px;
+    border-radius:999px;
+    display:inline-block;
+    margin-top:8px;
+  }
+
+  /* Footer link (Privacy Policy) */
+  .footer-link{
+    text-align:center;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    margin-top:22px;
+    text-decoration:underline;
+  }
+
+  /* Username generator */
+  .un-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:13px 16px;
+    margin-bottom:10px;
+  }
+  .un-name{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink);
+    word-break:break-all;
+  }
+  .un-copy{
+    flex:0 0 auto;
+    background:var(--lavender);
+    color:var(--accent-dark);
+    border:none;
+    border-radius:10px;
+    padding:8px 14px;
+    font-size:12px;
+    font-weight:700;
+  }
+
+  /* Privacy policy */
+  .policy-block h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin:18px 0 6px;
+  }
+  .policy-block h3:first-of-type{margin-top:4px;}
+  .policy-block p{
+    font-size:13.5px;
+    line-height:1.55;
+    color:var(--muted);
+    margin:0 0 4px;
+  }
+  .policy-updated{
+    font-size:12px;
+    color:var(--accent-dark);
+    font-weight:600;
+    margin-bottom:14px !important;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="back-btn" id="backBtn">←</div>
+  <div class="titles">
+    <div class="brand" id="headerBrand">Utility<span>Box</span></div>
+    <div class="tag" id="headerTag">by Reward Software</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <section class="view active" id="view-home">
+    <div class="tool-grid">
+      <div class="tool-card" data-view="calc" data-title="Calculator">
+        <div class="ic">🧮</div><div class="name">Calculator</div>
+      </div>
+      <div class="tool-card" data-view="unitconv" data-title="Unit Converter">
+        <div class="ic">🔁</div><div class="name">Unit Converter</div>
+      </div>
+      <div class="tool-card" data-view="currency" data-title="Currency Converter">
+        <div class="ic">💱</div><div class="name">Currency Converter</div>
+      </div>
+      <div class="tool-card" data-view="wordcount" data-title="Word Counter">
+        <div class="ic">📝</div><div class="name">Word Counter</div>
+      </div>
+      <div class="tool-card" data-view="age" data-title="Age Calculator">
+        <div class="ic">🎂</div><div class="name">Age Calculator</div>
+      </div>
+      <div class="tool-card" data-view="password" data-title="Password Generator">
+        <div class="ic">🔐</div><div class="name">Password Generator</div>
+      </div>
+      <div class="tool-card" data-view="bmi" data-title="BMI Calculator">
+        <div class="ic">⚖️</div><div class="name">BMI Calculator</div>
+      </div>
+      <div class="tool-card" data-view="username" data-title="Username Generator">
+        <div class="ic">🧑‍💻</div><div class="name">Username Generator</div>
+      </div>
+    </div>
+    <div class="footer-link" id="privacyLink">Privacy Policy</div>
+  </section>
+
+  <!-- CALCULATOR -->
+  <section class="view" id="view-calc">
+    <div class="calc-display">
+      <div class="calc-expr" id="calcExpr">&nbsp;</div>
+      <div class="calc-result" id="calcResult">0</div>
+    </div>
+    <div class="calc-grid" id="calcGrid"></div>
+  </section>
+
+  <!-- UNIT CONVERTER -->
+  <section class="view" id="view-unitconv">
+    <div class="cat-scroll" id="catScroll"></div>
+    <div class="card">
+      <div class="card-label">From</div>
+      <div class="row">
+        <input class="num-input" id="fromValue" type="number" inputmode="decimal" value="1">
+        <select class="unit" id="fromUnit"></select>
+      </div>
+    </div>
+    <button class="swap-btn" id="swapBtn">⇅</button>
+    <div class="card">
+      <div class="card-label">To</div>
+      <div class="row">
+        <input class="num-input" id="toValue" type="number" readonly>
+        <select class="unit" id="toUnit"></select>
+      </div>
+    </div>
+  </section>
+
+  <!-- CURRENCY CONVERTER -->
+  <section class="view" id="view-currency">
+    <div class="card">
+      <div class="card-label">Amount</div>
+      <div class="row">
+        <input class="num-input" id="curFromValue" type="number" inputmode="decimal" value="1">
+        <select class="unit" id="curFromUnit"></select>
+      </div>
+    </div>
+    <button class="swap-btn" id="curSwapBtn">⇅</button>
+    <div class="card">
+      <div class="card-label">Converted</div>
+      <div class="row">
+        <input class="num-input" id="curToValue" type="number" readonly>
+        <select class="unit" id="curToUnit"></select>
+      </div>
+    </div>
+    <div id="curStatus" style="font-size:12px; color:var(--muted); text-align:center;">Loading live rates…</div>
+  </section>
+
+  <!-- WORD COUNTER -->
+  <section class="view" id="view-wordcount">
+    <div class="card">
+      <div class="card-label">Your Text</div>
+      <textarea class="text-field" id="wcInput" placeholder="Paste or type your text here…"></textarea>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="val" id="wcWords">0</div><div class="lab">Words</div></div>
+      <div class="stat-box"><div class="val" id="wcChars">0</div><div class="lab">Characters</div></div>
+      <div class="stat-box"><div class="val" id="wcSentences">0</div><div class="lab">Sentences</div></div>
+      <div class="stat-box"><div class="val" id="wcParas">0</div><div class="lab">Paragraphs</div></div>
+    </div>
+  </section>
+
+  <!-- AGE CALCULATOR -->
+  <section class="view" id="view-age">
+    <div class="card">
+      <div class="card-label">Date of Birth</div>
+      <input class="text-field" id="ageInput" type="date">
+    </div>
+    <button class="btn" id="ageCalcBtn">Calculate Age</button>
+    <div class="stat-grid" id="ageResult" style="display:none;">
+      <div class="stat-box"><div class="val" id="ageYears">0</div><div class="lab">Years</div></div>
+      <div class="stat-box"><div class="val" id="ageMonths">0</div><div class="lab">Months</div></div>
+      <div class="stat-box"><div class="val" id="ageDays">0</div><div class="lab">Days</div></div>
+      <div class="stat-box"><div class="val" id="ageTotalDays">0</div><div class="lab">Total Days</div></div>
+    </div>
+  </section>
+
+  <!-- PASSWORD GENERATOR -->
+  <section class="view" id="view-password">
+    <div class="pass-display" id="passOutput">Tap Generate</div>
+    <div class="card">
+      <div class="opt-row">
+        <span id="passLenLabel">Length: 14</span>
+      </div>
+      <input type="range" id="passLength" min="6" max="32" value="14">
+      <div class="opt-row">
+        <span>Uppercase (A-Z)</span>
+        <label class="switch"><input type="checkbox" id="passUpper" checked><span class="dot"></span></label>
+      </div>
+      <div class="opt-row">
+        <span>Lowercase (a-z)</span>
+        <label class="switch"><input type="checkbox" id="passLower" checked><span class="dot"></span></label>
+      </div>
+      <div class="opt-row">
+        <span>Numbers (0-9)</span>
+        <label class="switch"><input type="checkbox" id="passNum" checked><span class="dot"></span></label>
+      </div>
+      <div class="opt-row">
+        <span>Symbols (!@#$)</span>
+        <label class="switch"><input type="checkbox" id="passSym"><span class="dot"></span></label>
+      </div>
+    </div>
+    <button class="btn" id="passGenBtn">Generate Password</button>
+    <button class="btn btn-outline" id="passCopyBtn" style="margin-top:10px;">Copy to Clipboard</button>
+  </section>
+
+  <!-- BMI CALCULATOR -->
+  <section class="view" id="view-bmi">
+    <div class="card">
+      <div class="card-label">Height (cm)</div>
+      <input class="num-input" id="bmiHeight" type="number" inputmode="decimal" placeholder="170" style="width:100%;">
+    </div>
+    <div class="card">
+      <div class="card-label">Weight (kg)</div>
+      <input class="num-input" id="bmiWeight" type="number" inputmode="decimal" placeholder="65" style="width:100%;">
+    </div>
+    <button class="btn" id="bmiCalcBtn">Calculate BMI</button>
+    <div class="card bmi-result" id="bmiResultCard" style="display:none;">
+      <div class="bmi-num" id="bmiNum">--</div>
+      <div class="bmi-cat" id="bmiCat">--</div>
+    </div>
+  </section>
+
+  <!-- USERNAME GENERATOR -->
+  <section class="view" id="view-username">
+    <div class="card">
+      <div class="card-label">Keyword (optional)</div>
+      <input class="text-field" id="unKeyword" type="text" placeholder="e.g. raj, gamer, shadow">
+    </div>
+    <div class="card">
+      <div class="opt-row">
+        <span>Add numbers</span>
+        <label class="switch"><input type="checkbox" id="unNumbers" checked><span class="dot"></span></label>
+      </div>
+      <div class="opt-row">
+        <span>Add underscore _</span>
+        <label class="switch"><input type="checkbox" id="unUnderscore" checked><span class="dot"></span></label>
+      </div>
+      <div class="opt-row" style="border-bottom:none;">
+        <span>Gaming style words</span>
+        <label class="switch"><input type="checkbox" id="unGaming" checked><span class="dot"></span></label>
+      </div>
+    </div>
+    <button class="btn" id="unGenBtn">Generate Usernames</button>
+    <div id="unResults"></div>
+  </section>
+
+  <!-- PRIVACY POLICY -->
+  <section class="view" id="view-privacy">
+    <div class="card policy-block">
+      <p class="policy-updated">Last updated: 23 July 2026</p>
+
+      <h3>Overview</h3>
+      <p>UtilityBox is provided by Reward Software. This app runs entirely in your browser or inside Telegram — most tools (calculator, converters, password generator, username generator, word counter, age and BMI calculators) process your input locally on your device and are not sent to any server.</p>
+
+      <h3>Information We Collect</h3>
+      <p>We do not require sign-up and do not collect personal information such as your name, email, or phone number through these tools. The Currency Converter tool fetches live exchange rates from a third-party API; no personal data is sent with that request. If this app is opened inside Telegram, basic Telegram WebApp data (such as your Telegram user ID and theme settings) may be available to us as part of standard Telegram Mini App functionality.</p>
+
+      <h3>Local Storage</h3>
+      <p>Some tools may use your device's local storage to remember preferences. This data stays on your device and is not transmitted to us.</p>
+
+      <h3>Third-Party Services</h3>
+      <p>This app may use third-party services for currency rates, Telegram integration, and advertising. These services may collect technical data (such as device type or IP address) according to their own privacy policies.</p>
+
+      <h3>Advertising</h3>
+      <p>Some Reward Software apps display ads through third-party ad networks. These networks may use cookies or device identifiers to show relevant ads. You can review their individual privacy policies for more detail.</p>
+
+      <h3>Children's Privacy</h3>
+      <p>Our tools are not directed at children under 13, and we do not knowingly collect data from children.</p>
+
+      <h3>Changes to This Policy</h3>
+      <p>We may update this policy from time to time. Continued use of the app after changes means you accept the updated policy.</p>
+
+      <h3>Contact Us</h3>
+      <p>Questions about this policy? Email us at rewardsoftware@gmail.com.</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ---------- Telegram WebApp init ----------
+try{
+  const tg = window.Telegram?.WebApp;
+  if(tg){
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#FAF9FF');
+    tg.setBackgroundColor('#FAF9FF');
+  }
+}catch(e){}
+
+function haptic(style){
+  try{ window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(style || 'light'); }catch(e){}
+}
+
+// ---------- Navigation ----------
+const backBtn = document.getElementById('backBtn');
+const headerBrand = document.getElementById('headerBrand');
+const headerTag = document.getElementById('headerTag');
+
+function showView(id, title){
+  haptic('light');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if(id === 'home'){
+    backBtn.classList.remove('show');
+    headerBrand.innerHTML = 'Utility<span>Box</span>';
+    headerTag.textContent = 'by Reward Software';
+  }else{
+    backBtn.classList.add('show');
+    headerBrand.textContent = title;
+    headerTag.textContent = 'UtilityBox';
+  }
+}
+
+document.querySelectorAll('.tool-card').forEach(card=>{
+  card.addEventListener('click', ()=> showView(card.dataset.view, card.dataset.title));
+});
+document.getElementById('privacyLink').addEventListener('click', ()=> showView('privacy', 'Privacy Policy'));
+backBtn.addEventListener('click', ()=> showView('home'));
+
+// ================= CALCULATOR =================
+const keys = [
+  {l:'C', cls:'func'}, {l:'( )', cls:'func'}, {l:'%', cls:'func'}, {l:'÷', cls:'op'},
+  {l:'7'}, {l:'8'}, {l:'9'}, {l:'×', cls:'op'},
+  {l:'4'}, {l:'5'}, {l:'6'}, {l:'−', cls:'op'},
+  {l:'1'}, {l:'2'}, {l:'3'}, {l:'+', cls:'op'},
+  {l:'⌫', cls:'func'}, {l:'0'}, {l:'.'}, {l:'=', cls:'equals'}
+];
+const grid = document.getElementById('calcGrid');
+let expr = '';
+let openParens = 0;
+
+keys.forEach(k=>{
+  const div = document.createElement('div');
+  div.className = 'key' + (k.cls ? ' ' + k.cls : '');
+  div.textContent = k.l;
+  div.addEventListener('click', ()=> handleKey(k.l));
+  grid.appendChild(div);
+});
+
+function handleKey(label){
+  haptic('light');
+  if(label === 'C'){ expr=''; openParens=0; }
+  else if(label === '⌫'){ expr = expr.slice(0,-1); }
+  else if(label === '( )'){
+    if(openParens===0 || /[+\-×÷(]$/.test(expr) || expr===''){ expr+='('; openParens++; }
+    else { expr+=')'; openParens--; }
+  }
+  else if(label === '='){
+    const val = evaluate(expr);
+    document.getElementById('calcExpr').textContent = expr || ' ';
+    document.getElementById('calcResult').textContent = val;
+    expr = (val === 'Error') ? '' : String(val);
+    return;
+  }
+  else { expr += label; }
+
+  document.getElementById('calcExpr').textContent = expr || ' ';
+  document.getElementById('calcResult').textContent = evaluate(expr, true);
+}
+
+function evaluate(str, preview){
+  if(!str) return preview ? '0' : '0';
+  let safe = str
+    .replace(/×/g,'*')
+    .replace(/÷/g,'/')
+    .replace(/−/g,'-')
+    .replace(/%/g,'/100');
+  try{
+    const result = Function('"use strict"; return (' + safe + ')')();
+    if(result === undefined || Number.isNaN(result) || !Number.isFinite(result)) return preview ? '' : 'Error';
+    return Math.round(result * 1e10) / 1e10;
+  }catch(e){
+    return preview ? '' : 'Error';
+  }
+}
+
+// ================= UNIT CONVERTER =================
+const categories = {
+  Length: { base:'m', units:{ m:1, km:1000, cm:0.01, mm:0.001, mile:1609.34, yard:0.9144, foot:0.3048, inch:0.0254 } },
+  Weight: { base:'kg', units:{ kg:1, g:0.001, mg:0.000001, ton:1000, pound:0.453592, ounce:0.0283495 } },
+  Temperature: { special:true },
+  Volume: { base:'l', units:{ liter:1, ml:0.001, gallon:3.78541, quart:0.946353, cup:0.24, tbsp:0.0147868, tsp:0.00492892 } },
+  Data: { base:'MB', units:{ Byte:1/1048576, KB:1/1024, MB:1, GB:1024, TB:1048576 } }
+};
+
+let currentCat = 'Length';
+const catScroll = document.getElementById('catScroll');
+const fromUnitSel = document.getElementById('fromUnit');
+const toUnitSel = document.getElementById('toUnit');
+const fromValue = document.getElementById('fromValue');
+const toValue = document.getElementById('toValue');
+
+Object.keys(categories).forEach(cat=>{
+  const chip = document.createElement('div');
+  chip.className = 'cat-chip' + (cat===currentCat ? ' active' : '');
+  chip.textContent = cat;
+  chip.addEventListener('click', ()=>{
+    haptic('light');
+    currentCat = cat;
+    document.querySelectorAll('.cat-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    populateUnits();
+    convert();
+  });
+  catScroll.appendChild(chip);
+});
+
+function populateUnits(){
+  fromUnitSel.innerHTML = '';
+  toUnitSel.innerHTML = '';
+  const cat = categories[currentCat];
+  const unitNames = cat.special ? ['Celsius','Fahrenheit','Kelvin'] : Object.keys(cat.units);
+  unitNames.forEach((u,i)=>{
+    const o1 = document.createElement('option'); o1.value=u; o1.textContent=u;
+    const o2 = document.createElement('option'); o2.value=u; o2.textContent=u;
+    if(i===0) o1.selected = true;
+    if(i===1 || unitNames.length===1) o2.selected = true;
+    fromUnitSel.appendChild(o1);
+    toUnitSel.appendChild(o2);
+  });
+}
+
+function convert(){
+  const cat = categories[currentCat];
+  const val = parseFloat(fromValue.value);
+  if(Number.isNaN(val)){ toValue.value=''; return; }
+  if(cat.special){
+    toValue.value = convertTemp(val, fromUnitSel.value, toUnitSel.value);
+    return;
+  }
+  const fromFactor = cat.units[fromUnitSel.value];
+  const toFactor = cat.units[toUnitSel.value];
+  toValue.value = trimNum((val * fromFactor) / toFactor);
+}
+
+function convertTemp(val, from, to){
+  if(from===to) return trimNum(val);
+  let celsius;
+  if(from==='Celsius') celsius = val;
+  else if(from==='Fahrenheit') celsius = (val-32)*5/9;
+  else celsius = val-273.15;
+  let result;
+  if(to==='Celsius') result = celsius;
+  else if(to==='Fahrenheit') result = celsius*9/5+32;
+  else result = celsius+273.15;
+  return trimNum(result);
+}
+
+function trimNum(n){ return Math.round(n * 1e6) / 1e6; }
+
+[fromValue, fromUnitSel, toUnitSel].forEach(el=>{
+  el.addEventListener('input', convert);
+  el.addEventListener('change', convert);
+});
+document.getElementById('swapBtn').addEventListener('click', ()=>{
+  haptic('medium');
+  const fu = fromUnitSel.value;
+  fromUnitSel.value = toUnitSel.value;
+  toUnitSel.value = fu;
+  fromValue.value = toValue.value || fromValue.value;
+  convert();
+});
+populateUnits();
+convert();
+
+// ================= CURRENCY CONVERTER =================
+const currencyList = ['INR','USD','EUR','GBP','AED','SAR','AUD','CAD','SGD','JPY','CNY','BRL'];
+const curFromUnit = document.getElementById('curFromUnit');
+const curToUnit = document.getElementById('curToUnit');
+const curFromValue = document.getElementById('curFromValue');
+const curToValue = document.getElementById('curToValue');
+const curStatus = document.getElementById('curStatus');
+
+let rates = { USD:1, INR:83.3, EUR:0.92, GBP:0.79, AED:3.67, SAR:3.75, AUD:1.52, CAD:1.37, SGD:1.35, JPY:157, CNY:7.25, BRL:5.5 };
+
+currencyList.forEach((c,i)=>{
+  const o1 = document.createElement('option'); o1.value=c; o1.textContent=c;
+  const o2 = document.createElement('option'); o2.value=c; o2.textContent=c;
+  if(c==='USD') o1.selected = true;
+  if(c==='INR') o2.selected = true;
+  curFromUnit.appendChild(o1);
+  curToUnit.appendChild(o2);
+});
+
+function curConvert(){
+  const val = parseFloat(curFromValue.value);
+  if(Number.isNaN(val)){ curToValue.value=''; return; }
+  const usdVal = val / rates[curFromUnit.value];
+  curToValue.value = trimNum(usdVal * rates[curToUnit.value]);
+}
+
+[curFromValue, curFromUnit, curToUnit].forEach(el=>{
+  el.addEventListener('input', curConvert);
+  el.addEventListener('change', curConvert);
+});
+document.getElementById('curSwapBtn').addEventListener('click', ()=>{
+  haptic('medium');
+  const fu = curFromUnit.value;
+  curFromUnit.value = curToUnit.value;
+  curToUnit.value = fu;
+  curConvert();
+});
+
+fetch('https://open.er-api.com/v6/latest/USD')
+  .then(r=>r.json())
+  .then(data=>{
+    if(data && data.rates){
+      currencyList.forEach(c=>{ if(data.rates[c]) rates[c] = data.rates[c]; });
+      curStatus.textContent = 'Live rates updated';
+      curConvert();
+    }
+  })
+  .catch(()=>{ curStatus.textContent = 'Using offline rates'; });
+
+curConvert();
+
+// ================= WORD COUNTER =================
+const wcInput = document.getElementById('wcInput');
+wcInput.addEventListener('input', ()=>{
+  const text = wcInput.value;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  const sentences = text.trim() ? (text.match(/[.!?]+/g) || []).length : 0;
+  const paras = text.trim() ? text.split(/\n+/).filter(p=>p.trim()).length : 0;
+  document.getElementById('wcWords').textContent = words;
+  document.getElementById('wcChars').textContent = chars;
+  document.getElementById('wcSentences').textContent = sentences;
+  document.getElementById('wcParas').textContent = paras;
+});
+
+// ================= AGE CALCULATOR =================
+document.getElementById('ageCalcBtn').addEventListener('click', ()=>{
+  haptic('medium');
+  const dobStr = document.getElementById('ageInput').value;
+  if(!dobStr) return;
+  const dob = new Date(dobStr);
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  let months = now.getMonth() - dob.getMonth();
+  let days = now.getDate() - dob.getDate();
+  if(days < 0){
+    months--;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  if(months < 0){ years--; months += 12; }
+  const totalDays = Math.floor((now - dob) / (1000*60*60*24));
+  document.getElementById('ageYears').textContent = years;
+  document.getElementById('ageMonths').textContent = months;
+  document.getElementById('ageDays').textContent = days;
+  document.getElementById('ageTotalDays').textContent = totalDays;
+  document.getElementById('ageResult').style.display = 'grid';
+});
+
+// ================= PASSWORD GENERATOR =================
+const passLength = document.getElementById('passLength');
+const passLenLabel = document.getElementById('passLenLabel');
+passLength.addEventListener('input', ()=> passLenLabel.textContent = 'Length: ' + passLength.value);
+
+document.getElementById('passGenBtn').addEventListener('click', ()=>{
+  haptic('medium');
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const nums = '0123456789';
+  const syms = '!@#$%^&*()_+-=[]{}';
+  let pool = '';
+  if(document.getElementById('passUpper').checked) pool += upper;
+  if(document.getElementById('passLower').checked) pool += lower;
+  if(document.getElementById('passNum').checked) pool += nums;
+  if(document.getElementById('passSym').checked) pool += syms;
+  if(!pool){ document.getElementById('passOutput').textContent = 'Select at least one option'; return; }
+  const len = parseInt(passLength.value);
+  let result = '';
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  for(let i=0;i<len;i++){ result += pool[arr[i] % pool.length]; }
+  document.getElementById('passOutput').textContent = result;
+});
+
+document.getElementById('passCopyBtn').addEventListener('click', async ()=>{
+  haptic('light');
+  const btn = document.getElementById('passCopyBtn');
+  const text = document.getElementById('passOutput').textContent;
+  if(!text || text === 'Tap Generate') return;
+  const ok = await copyToClipboard(text);
+  const original = btn.textContent;
+  btn.textContent = ok ? 'Copied!' : 'Copy failed — select manually';
+  setTimeout(()=>{ btn.textContent = original; }, 1500);
+});
+
+// ================= BMI CALCULATOR =================
+document.getElementById('bmiCalcBtn').addEventListener('click', ()=>{
+  haptic('medium');
+  const h = parseFloat(document.getElementById('bmiHeight').value) / 100;
+  const w = parseFloat(document.getElementById('bmiWeight').value);
+  if(!h || !w) return;
+  const bmi = w / (h*h);
+  document.getElementById('bmiNum').textContent = bmi.toFixed(1);
+  const catEl = document.getElementById('bmiCat');
+  let cat, color, bg;
+  if(bmi < 18.5){ cat='Underweight'; color='#B4530C'; bg='#FDEBD8'; }
+  else if(bmi < 25){ cat='Normal'; color='#1E8B5C'; bg='#DCF6EA'; }
+  else if(bmi < 30){ cat='Overweight'; color='#B4530C'; bg='#FDEBD8'; }
+  else { cat='Obese'; color='#C23B4B'; bg='#FCE1E4'; }
+  catEl.textContent = cat;
+  catEl.style.color = color;
+  catEl.style.background = bg;
+  document.getElementById('bmiResultCard').style.display = 'block';
+});
+
+// ================= USERNAME GENERATOR =================
+const unAdjectives = ['Shadow','Silent','Cosmic','Turbo','Mighty','Crimson','Frost','Neon','Rapid','Golden','Silver','Rogue','Mystic','Blaze','Storm','Iron','Lunar','Solar','Ninja','Alpha'];
+const unNouns = ['Wolf','Tiger','Phoenix','Falcon','Dragon','Hunter','Knight','Panther','Raven','Viper','Warrior','Ghost','Titan','Fox','Eagle','Cobra','Reaper','Ranger','Legend','Storm'];
+
+function unRandInt(max){ return Math.floor(Math.random() * max); }
+
+function generateUsernames(){
+  const keyword = document.getElementById('unKeyword').value.trim().replace(/\s+/g, '');
+  const addNumbers = document.getElementById('unNumbers').checked;
+  const addUnderscore = document.getElementById('unUnderscore').checked;
+  const gamingStyle = document.getElementById('unGaming').checked;
+  const sep = addUnderscore ? '_' : '';
+  const results = [];
+
+  for(let i=0; i<8; i++){
+    let base;
+    if(keyword && gamingStyle){
+      base = Math.random() < 0.5
+        ? unAdjectives[unRandInt(unAdjectives.length)] + sep + keyword
+        : keyword + sep + unNouns[unRandInt(unNouns.length)];
+    }else if(keyword){
+      base = keyword;
+    }else if(gamingStyle){
+      base = unAdjectives[unRandInt(unAdjectives.length)] + sep + unNouns[unRandInt(unNouns.length)];
+    }else{
+      base = 'User';
+    }
+    if(addNumbers){ base += (10 + unRandInt(90)); }
+    results.push(base);
+  }
+  return [...new Set(results)];
+}
+
+document.getElementById('unGenBtn').addEventListener('click', ()=>{
+  haptic('medium');
+  const names = generateUsernames();
+  const unResults = document.getElementById('unResults');
+  unResults.innerHTML = '';
+  names.forEach(name=>{
+    const item = document.createElement('div');
+    item.className = 'un-item';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'un-name';
+    nameSpan.textContent = name;
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'un-copy';
+    copyBtn.textContent = 'Copy';
+    copyBtn.addEventListener('click', async ()=>{
+      haptic('light');
+      const ok = await copyToClipboard(name);
+      const original = copyBtn.textContent;
+      copyBtn.textContent = ok ? 'Copied!' : 'Failed';
+      setTimeout(()=>{ copyBtn.textContent = original; }, 1200);
+    });
+    item.appendChild(nameSpan);
+    item.appendChild(copyBtn);
+    unResults.appendChild(item);
+  });
+});
+
+// ================= CLIPBOARD HELPER =================
+function copyToClipboard(text){
+  return new Promise((resolve)=>{
+    if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+      navigator.clipboard.writeText(text).then(()=>resolve(true)).catch(()=>resolve(fallbackCopy(text)));
+    }else{
+      resolve(fallbackCopy(text));
+    }
+  });
+}
+function fallbackCopy(text){
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){
+    return false;
+  }
+}
+</script>
+</body>
+</html>
